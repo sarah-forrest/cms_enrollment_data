@@ -1,0 +1,105 @@
+---
+title: "CMS Monthly Enrollment Data Extraction"
+author: "Sarah Forrest"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, message = FALSE, dpi = 300, fig.width = 7)
+```
+
+```{r load packages}
+library(tidyverse)
+library(stringr)
+```
+
+Monthly enrollment data at the contract/plan/state/county level was downloaded from CMS here: https://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/MCRAdvPartDEnrolData/Monthly-Enrollment-by-Contract-Plan-State-County
+
+The downloaded folder contains 2 files: an enrollment data file and a contract data file. Both files share the following common fields: `contract_number` (= `contract_id`) and `plan_id`. These two fields combined make up the H-number. 
+
+Read in both data files and restrict the dataset to health plans (i.e. H-numbers) of interest only. A separate contract data file is created for MAP plans and MA D-SNP plans:
+```{r}
+# read in enrollment data
+feb_2023_enroll =
+  read_csv("data/raw_data/CPSC_Enrollment_2023_02/CPSC_Enrollment_Info_2023_02.csv") %>%
+  filter(State == "NY") %>%
+  janitor::clean_names()
+
+# read in contract data
+  # MAP plans
+feb_2023_map_contract =
+  read_csv("data/raw_data/CPSC_Enrollment_2023_02/CPSC_Contract_Info_2023_02.csv") %>%
+  janitor::clean_names() %>%
+  mutate(h_number = str_c(contract_id, '-', plan_id)) %>%
+  filter(h_number %in% c("H3359-034", "H5549-003", "H3347-007", "H2168-002", "H6988-004", "H5599-003", "H0034-002", "H1732-001", "H5992-007", "H6776-002", "H4922-010", "H0423-007", "H5599-008"))
+
+  # MA D-SNP plans                         
+feb_2023_madsnp_contract =
+  read_csv("data/raw_data/CPSC_Enrollment_2023_02/CPSC_Contract_Info_2023_02.csv") %>%
+  janitor::clean_names() %>%
+  mutate(h_number = str_c(contract_id, '-', plan_id)) %>%
+  filter(h_number %in% c("H3312-069", "H4922-003", "H6988-002", "H3347-002", "H3330-042", "H5991-010", "H8432-007", "H8432-028", "H1732-003", "H0034-001", "H3359-021", "H3533-034", "H5970-026", "H0423-001", "H5992-008", "H0271-060", "H3387-014", "H3387-015", "H2168-001", "H2168-003","H5549-011", "H5599-001"))
+# H3533-034-001/002 (Humana Gold MA D-SNP Plans 1 and 2) together
+```
+
+Merge the contract data files and the enrollment data together using the shared fields `contract_number` (= `contract_id`) and `plan_id`. Pivot datasets to wide format and calculate the following "total" variables:
+
+* New York City Total: `nyc_total` = the sum across New York, Bronx, Kings, Queens, and Richmond counties
+* New York City Metro Total: `nyc_metro_total` = the sum across NYC counties plus Nassau, Suffolk, Westchester, and Rockland counties
+* New York State Total: `nys_total` = the sum across all counties in New York
+```{r}
+# create merged datasets
+  # MAP plans
+feb_2023_map = 
+  inner_join(feb_2023_enroll, feb_2023_map_contract, by = c("contract_number" = "contract_id", "plan_id" = "plan_id")) %>%
+  select(h_number, contract_number, plan_id, organization_marketing_name, plan_name, plan_type, county, enrollment) %>%
+  mutate(enrollment = case_when(enrollment == "*" ~ "0", enrollment != "*" ~ enrollment)) %>%
+  mutate(enrollment = as.numeric(enrollment)) %>%
+  pivot_wider(names_from = county, values_from = enrollment) %>%
+  janitor::clean_names() %>%
+  select(order(colnames(.))) %>%
+  select(h_number, contract_number, plan_id, organization_marketing_name, plan_name, plan_type, everything()) %>%
+  mutate(
+    nyc_total = (sum = rowSums(dplyr::select(., new_york, bronx, kings, queens, richmond), na.rm = TRUE)),
+    nyc_metro_total = (sum = rowSums(dplyr::select(., new_york, bronx, kings, queens, richmond, nassau, suffolk, westchester, rockland), na.rm = TRUE)),
+    nys_total = (sum = rowSums(dplyr::select(., albany:yates), na.rm = TRUE))) %>%
+  select(organization_marketing_name, plan_name, h_number, contract_number, plan_id, plan_type, nyc_total, nyc_metro_total, nys_total, everything()) 
+        
+# MA D-SNP plans 
+feb_2023_madsnp = 
+  inner_join(feb_2023_enroll, feb_2023_madsnp_contract, by = c("contract_number" = "contract_id", "plan_id" = "plan_id")) %>%
+  select(h_number, contract_number, plan_id, organization_marketing_name, plan_name, plan_type, county, enrollment) %>%
+  mutate(enrollment = case_when(enrollment == "*" ~ "0", enrollment != "*" ~ enrollment)) %>%
+  mutate(enrollment = as.numeric(enrollment)) %>%
+  pivot_wider(names_from = county, values_from = enrollment) %>%
+  janitor::clean_names() %>%
+  select(order(colnames(.))) %>%
+  select(h_number, contract_number, plan_id, organization_marketing_name, plan_name, plan_type, everything()) %>%
+  mutate(
+    nyc_total = (sum = rowSums(dplyr::select(., new_york, bronx, kings, queens, richmond), na.rm = TRUE)),
+    nyc_metro_total = (sum = rowSums(dplyr::select(., new_york, bronx, kings, queens, richmond, nassau, suffolk, westchester, rockland), na.rm = TRUE)),
+    nys_total = (sum = rowSums(dplyr::select(., albany:yates), na.rm = TRUE))) %>%
+  select(organization_marketing_name, plan_name, h_number, contract_number, plan_id, plan_type, nyc_total, nyc_metro_total, nys_total, everything())
+```
+
+View the resulting output datasets
+
+MSP plan dataset:
+```{r}
+feb_2023_map %>% 
+  select(-organization_marketing_name, -contract_number, -plan_id, -plan_type) %>% 
+  knitr::kable()
+```
+
+MA D-SNP plan dataset:
+```{r}
+feb_2023_madsnp %>% 
+  select(-organization_marketing_name, -contract_number, -plan_id, -plan_type) %>% 
+  knitr::kable()
+```
+
+Save the resulting output datasets as CSV files:
+```{r}
+write.csv(feb_2023_map,"data/output_data/by_month/feb_2023_map.csv", row.names = TRUE)
+write.csv(feb_2023_madsnp,"data/output_data/by_month/feb_2023_madsnp.csv", row.names = TRUE)
+```
