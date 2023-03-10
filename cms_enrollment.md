@@ -101,8 +101,8 @@ madsnp_blank[is.na(madsnp_blank)] <- "" # replace NA with blank
 df_name_map = str_c(yyyy_mm, "_map")
 df_name_madsnp = str_c(yyyy_mm, "_madsnp")
 
-assign(x = df_name_map, value = map_blank, envir = globalenv())
-assign(x = df_name_madsnp, value = madsnp_blank, envir = globalenv())
+assign(x = df_name_map, value = map, envir = globalenv())
+assign(x = df_name_madsnp, value = madsnp, envir = globalenv())
 
 save_path_map = str_c("data/output_data/map/", df_name_map, ".csv")
 save_path_madsnp = str_c("data/output_data/madsnp/", df_name_madsnp, ".csv")
