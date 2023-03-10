@@ -63,7 +63,7 @@ feb_2023_map =
     nyc_total = (sum = rowSums(dplyr::select(., new_york, bronx, kings, queens, richmond), na.rm = TRUE)),
     nyc_metro_total = (sum = rowSums(dplyr::select(., new_york, bronx, kings, queens, richmond, nassau, suffolk, westchester, rockland), na.rm = TRUE)),
     nys_total = (sum = rowSums(dplyr::select(., albany:yates), na.rm = TRUE))) %>%
-  select(organization_marketing_name, plan_name, h_number, contract_number, plan_id, plan_type, nyc_total, nyc_metro_total, nys_total, everything()) 
+  select(organization_marketing_name, plan_name, h_number, contract_number, plan_id, plan_type, nyc_total, nyc_metro_total, nys_total, everything())
         
 # MA D-SNP plans 
 feb_2023_madsnp = 
@@ -80,26 +80,38 @@ feb_2023_madsnp =
     nyc_metro_total = (sum = rowSums(dplyr::select(., new_york, bronx, kings, queens, richmond, nassau, suffolk, westchester, rockland), na.rm = TRUE)),
     nys_total = (sum = rowSums(dplyr::select(., albany:yates), na.rm = TRUE))) %>%
   select(organization_marketing_name, plan_name, h_number, contract_number, plan_id, plan_type, nyc_total, nyc_metro_total, nys_total, everything())
+           
 ```
 
 View the resulting output datasets
 
-MSP plan dataset:
+MAP plan dataset:
 ```{r}
-feb_2023_map %>% 
-  select(-organization_marketing_name, -contract_number, -plan_id, -plan_type) %>% 
+# select only necessary variables
+feb_2023_map_blank <- feb_2023_map %>% # replicate dataset to create a blank version
+  select(-organization_marketing_name, -contract_number, -plan_id, -plan_type) # select only necessary variables
+
+feb_2023_map_blank <- sapply(feb_2023_map_blank, as.character) 
+feb_2023_map_blank[is.na(feb_2023_map_blank)] <- "" # replace NA with blank
+
+feb_2023_map_blank  %>% 
   knitr::kable()
 ```
 
 MA D-SNP plan dataset:
 ```{r}
-feb_2023_madsnp %>% 
-  select(-organization_marketing_name, -contract_number, -plan_id, -plan_type) %>% 
+feb_2023_madsnp_blank <- feb_2023_madsnp %>% # replicate dataset to create a blank version
+  select(-organization_marketing_name, -contract_number, -plan_id, -plan_type) # select only necessary variables
+
+feb_2023_madsnp_blank <- sapply(feb_2023_madsnp_blank, as.character) 
+feb_2023_madsnp_blank[is.na(feb_2023_madsnp_blank)] <- "" # replace NA with blank
+
+feb_2023_madsnp_blank  %>% 
   knitr::kable()
 ```
 
 Save the resulting output datasets as CSV files:
 ```{r}
-write.csv(feb_2023_map,"data/output_data/by_month/feb_2023_map.csv", row.names = TRUE)
-write.csv(feb_2023_madsnp,"data/output_data/by_month/feb_2023_madsnp.csv", row.names = TRUE)
+write.csv(feb_2023_map_blank,"data/output_data/by_month/feb_2023_map.csv", row.names = TRUE)
+write.csv(feb_2023_madsnp_blank,"data/output_data/by_month/feb_2023_madsnp.csv", row.names = TRUE)
 ```
