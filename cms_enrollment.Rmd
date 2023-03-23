@@ -5,7 +5,7 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(collapse = TRUE, message = FALSE, dpi = 300, fig.width = 7)
+knitr::opts_chunk$set(collapse = TRUE, message = FALSE, warning = FALSE, dpi = 300, fig.width = 7)
 ```
 
 ```{r load packages}
@@ -381,18 +381,13 @@ map_plan_names <- map_2023_02 %>%
   select(plan_name, h_number) 
 
 nyc_map <- inner_join(nyc_map, map_plan_names, by = "h_number") %>%
-  select(plan_name, everything()) %>% 
-  mutate(plan_name = gsub("(HMO D-SNP)$", "", plan_name))
+  select(plan_name, everything())
 
 nyc_metro_map <- inner_join(nyc_metro_map, map_plan_names, by = "h_number") %>%
   select(plan_name, everything())
 
 nys_map <- inner_join(nys_map, map_plan_names, by = "h_number") %>%
   select(plan_name, everything())
-
-nyc_map
-nyc_metro_map
-nys_map
 ```
 
 Add plan names to all MA D-SNP dataframes
@@ -403,27 +398,26 @@ madsnp_plan_names <- madsnp_2023_02 %>%
 
 nyc_madsnp <- inner_join(nyc_madsnp, madsnp_plan_names, by = "h_number") %>%
   select(plan_name, everything())
+nyc_madsnp[is.na(nyc_madsnp)] <- "0" # replace NA with 0s
 
 nyc_metro_madsnp <- inner_join(nyc_metro_madsnp, madsnp_plan_names, by = "h_number") %>%
   select(plan_name, everything())
+nyc_metro_madsnp[is.na(nyc_metro_madsnp)] <- "0" # replace NA with 0s
 
 nys_madsnp <- inner_join(nys_madsnp, madsnp_plan_names, by = "h_number") %>%
   select(plan_name, everything())
-
-nyc_madsnp
-nyc_metro_madsnp
-nys_madsnp
+nys_madsnp[is.na(nys_madsnp)] <- "0" # replace NA with 0s
 ```
 
 Save datasets
 
 ```{r}
 write.csv(nyc_map, "data/output_data/map/nyc_map.csv", row.names = TRUE)
-write.csv(nyc_metro_map, "data/output_data/map/nyc_map.csv", row.names = TRUE)
+write.csv(nyc_metro_map, "data/output_data/map/nyc_metro_map.csv", row.names = TRUE)
 write.csv(nys_map, "data/output_data/map/nys_map.csv", row.names = TRUE)
 
 write.csv(nyc_madsnp, "data/output_data/madsnp/nyc_madsnp.csv", row.names = TRUE)
-write.csv(nyc_metro_madsnp, "data/output_data/madsnp/nyc_madsnp.csv", row.names = TRUE)
+write.csv(nyc_metro_madsnp, "data/output_data/madsnp/nyc_metro_madsnp.csv", row.names = TRUE)
 write.csv(nys_madsnp, "data/output_data/madsnp/nys_madsnp.csv", row.names = TRUE)
 ```
 
@@ -439,13 +433,14 @@ nyc_map_long <-
 
 nyc_map_long %>%  
   ggplot(aes(x = month, y = enrollment, group = plan_name, color = plan_name)) + 
-  geom_point() + 
   geom_path() + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  theme(legend.position = "bottom", legend.box = "horizontal")
-
-  # labs(
-    # title = "Proportion of Homicides That are Unsolved in 50 U.S. Cities",
-    # x = "City",
-    # y = "Proportion")
+  theme(legend.position = "bottom", legend.box = "horizontal") + 
+  theme(legend.text = element_text(size = 4.5),
+        legend.key.size = unit(0.3, "cm")) + 
+  labs(
+    title = "NYC MAP Plan Enrollment",
+    x = "Month",
+    y = "Enrollment") +
+  guides(fill = guide_legend(title = "Plan"))
 ```
