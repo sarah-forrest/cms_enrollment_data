@@ -117,7 +117,7 @@ The `enrollment_data` function above is applied to all months of data
 from 2021 - present.
 
 ``` r
-enrollment_data(yyyy_mm = "2023_02")
+enrollment_data(yyyy_mm = "2023_02")  # Note: must add new row above here for new months after 02/2023
 enrollment_data(yyyy_mm = "2023_01")
 enrollment_data(yyyy_mm = "2022_12")
 enrollment_data(yyyy_mm = "2022_11")
@@ -145,7 +145,8 @@ enrollment_data(yyyy_mm = "2021_02")
 enrollment_data(yyyy_mm = "2021_01")
 ```
 
-Merge the data together
+The functions below create time series datasets for MAP and MA D-SNP
+plans by Region (NYC, NYC Metro Area, NYS)
 
 NYC MAP:
 
@@ -159,7 +160,7 @@ for (year in 2021:2023) {
     # create the name of the dataframe to be merged
     map_name <- paste0("map_", year, "_", sprintf("%02d", month))
     
-    # Check if object exists
+    # check if object exists
     if (exists(map_name)) {
       # merge the current dataframe with nyc_metro_map
       if (nrow(nyc_map) == 0) {
@@ -172,12 +173,12 @@ for (year in 2021:2023) {
                          get(map_name)[ , c("h_number", "nyc_total")], 
                          by = merge_cols,
                          all = TRUE)
-        # Clean up suffixes in column names
+        # clean up suffixes in column names
         colnames(nyc_map) <- gsub("_x$", "", colnames(nyc_map))
         colnames(nyc_map) <- gsub("_y$", "", colnames(nyc_map))
       }
     } else {
-      # Object does not exist, so skip this iteration
+      # object does not exist, so skip this iteration
       next
     }
   }
@@ -196,7 +197,7 @@ for (year in 2021:2023) {
     # create the name of the dataframe to be merged
     map_name <- paste0("map_", year, "_", sprintf("%02d", month))
     
-    # Check if object exists
+    # check if object exists
     if (exists(map_name)) {
       # merge the current dataframe with nyc_metro_metro_map
       if (nrow(nyc_metro_map) == 0) {
@@ -209,12 +210,12 @@ for (year in 2021:2023) {
                          get(map_name)[ , c("h_number", "nyc_metro_total")], 
                          by = merge_cols,
                          all = TRUE)
-        # Clean up suffixes in column names
+        # clean up suffixes in column names
         colnames(nyc_metro_map) <- gsub("_x$", "", colnames(nyc_metro_map))
         colnames(nyc_metro_map) <- gsub("_y$", "", colnames(nyc_metro_map))
       }
     } else {
-      # Object does not exist, so skip this iteration
+      # object does not exist, so skip this iteration
       next
     }
   }
@@ -246,12 +247,12 @@ for (year in 2021:2023) {
                          get(map_name)[ , c("h_number", "nys_total")], 
                          by = merge_cols,
                          all = TRUE)
-        # Clean up suffixes in column names
+        # clean up suffixes in column names
         colnames(nys_map) <- gsub("_x$", "", colnames(nys_map))
         colnames(nys_map) <- gsub("_y$", "", colnames(nys_map))
       }
     } else {
-      # Object does not exist, so skip this iteration
+      # object does not exist, so skip this iteration
       next
     }
   }
@@ -270,7 +271,7 @@ for (year in 2021:2023) {
     # create the name of the dataframe to be merged
     madsnp_name <- paste0("madsnp_", year, "_", sprintf("%02d", month))
     
-    # Check if object exists
+    # check if object exists
     if (exists(madsnp_name)) {
       # merge the current dataframe with nyc_metro_madsnp
       if (nrow(nyc_madsnp) == 0) {
@@ -283,12 +284,12 @@ for (year in 2021:2023) {
                          get(madsnp_name)[ , c("h_number", "nyc_total")], 
                          by = merge_cols,
                          all = TRUE)
-        # Clean up suffixes in column names
+        # clean up suffixes in column names
         colnames(nyc_madsnp) <- gsub("_x$", "", colnames(nyc_madsnp))
         colnames(nyc_madsnp) <- gsub("_y$", "", colnames(nyc_madsnp))
       }
     } else {
-      # Object does not exist, so skip this iteration
+      # object does not exist, so skip this iteration
       next
     }
   }
@@ -307,7 +308,7 @@ for (year in 2021:2023) {
     # create the name of the dataframe to be merged
     madsnp_name <- paste0("madsnp_", year, "_", sprintf("%02d", month))
     
-    # Check if object exists
+    # check if object exists
     if (exists(madsnp_name)) {
       # merge the current dataframe with nyc_metro_metro_madsnp
       if (nrow(nyc_metro_madsnp) == 0) {
@@ -320,12 +321,12 @@ for (year in 2021:2023) {
                          get(madsnp_name)[ , c("h_number", "nyc_metro_total")], 
                          by = merge_cols,
                          all = TRUE)
-        # Clean up suffixes in column names
+        # clean up suffixes in column names
         colnames(nyc_metro_madsnp) <- gsub("_x$", "", colnames(nyc_metro_madsnp))
         colnames(nyc_metro_madsnp) <- gsub("_y$", "", colnames(nyc_metro_madsnp))
       }
     } else {
-      # Object does not exist, so skip this iteration
+      # object does not exist, so skip this iteration
       next
     }
   }
@@ -344,7 +345,7 @@ for (year in 2021:2023) {
     # create the name of the dataframe to be merged
     madsnp_name <- paste0("madsnp_", year, "_", sprintf("%02d", month))
     
-    # Check if object exists
+    # check if object exists
     if (exists(madsnp_name)) {
       # merge the current dataframe with nys_metro_madsnp
       if (nrow(nys_madsnp) == 0) {
@@ -362,7 +363,7 @@ for (year in 2021:2023) {
         colnames(nys_madsnp) <- gsub("_y$", "", colnames(nys_madsnp))
       }
     } else {
-      # Object does not exist, so skip this iteration
+      # object does not exist, so skip this iteration
       next
     }
   }
@@ -373,24 +374,33 @@ Add column names to all MAP and MA D-SNP dataframes
 
 ``` r
 # create column names vector
-col_name_vector_forward = c("h_number", "2021_01", "2021_02", "2021_03", "2021_04", "2021_05", "2021_06", "2021_07", "2021_08", "2021_09", "2021_10", "2021_11", "2021_12", "2022_01", "2022_02", "2022_03", "2022_04", "2022_05", "2022_06", "2022_07", "2022_08", "2022_09", "2022_10", "2022_11", "2022_12", "2023_01", "2023_02")
+col_name_vector_forward = c("h_number", "2021_01", "2021_02", "2021_03", "2021_04", "2021_05", "2021_06", "2021_07", "2021_08", "2021_09", "2021_10", "2021_11", "2021_12", "2022_01", "2022_02", "2022_03", "2022_04", "2022_05", "2022_06", "2022_07", "2022_08", "2022_09", "2022_10", "2022_11", "2022_12", "2023_01", "2023_02") # Note: must add new column name here for new months after 02/2023
 
 # applying colnames
+  # map datasets
 colnames(nyc_map) = col_name_vector_forward
 colnames(nyc_metro_map) = col_name_vector_forward
 colnames(nys_map) = col_name_vector_forward
 
+  # madsnp datasets
 colnames(nyc_madsnp) = col_name_vector_forward
 colnames(nyc_metro_madsnp) = col_name_vector_forward
 colnames(nys_madsnp) = col_name_vector_forward
 ```
 
-Add plan names to all MAP dataframes
+Add `plan_name` column to the datasets by merging a month dataset with
+the time series dataset using the H-Number
 
 ``` r
+# Restrict month dataset to only the columns of interest (plan_name, h_number)
 map_plan_names <- map_2023_02 %>%
   select(plan_name, h_number) 
 
+madsnp_plan_names <- madsnp_2023_02 %>%
+  select(plan_name, h_number)
+
+# join the datasets and move plan_name to the front
+  # map datasets
 nyc_map <- inner_join(nyc_map, map_plan_names, by = "h_number") %>%
   select(plan_name, everything())
 
@@ -399,42 +409,40 @@ nyc_metro_map <- inner_join(nyc_metro_map, map_plan_names, by = "h_number") %>%
 
 nys_map <- inner_join(nys_map, map_plan_names, by = "h_number") %>%
   select(plan_name, everything())
-```
 
-Add plan names to all MA D-SNP dataframes
-
-``` r
-madsnp_plan_names <- madsnp_2023_02 %>%
-  select(plan_name, h_number)
-
+  # madsnp datasets
 nyc_madsnp <- inner_join(nyc_madsnp, madsnp_plan_names, by = "h_number") %>%
   select(plan_name, everything())
-nyc_madsnp[is.na(nyc_madsnp)] <- "0" # replace NA with 0s
+nyc_madsnp[is.na(nyc_madsnp)] <- 0 # replace NA with 0s
 
 nyc_metro_madsnp <- inner_join(nyc_metro_madsnp, madsnp_plan_names, by = "h_number") %>%
   select(plan_name, everything())
-nyc_metro_madsnp[is.na(nyc_metro_madsnp)] <- "0" # replace NA with 0s
+nyc_metro_madsnp[is.na(nyc_metro_madsnp)] <- 0 # replace NA with 0s
 
 nys_madsnp <- inner_join(nys_madsnp, madsnp_plan_names, by = "h_number") %>%
   select(plan_name, everything())
-nys_madsnp[is.na(nys_madsnp)] <- "0" # replace NA with 0s
+nys_madsnp[is.na(nys_madsnp)] <- 0 # replace NA with 0s
 ```
 
-Save datasets
-
 ``` r
+# save datasets as CSV files
+  # map datasets
 write.csv(nyc_map, "data/output_data/map/nyc_map.csv", row.names = TRUE)
 write.csv(nyc_metro_map, "data/output_data/map/nyc_metro_map.csv", row.names = TRUE)
 write.csv(nys_map, "data/output_data/map/nys_map.csv", row.names = TRUE)
 
+  # madsnp datasets
 write.csv(nyc_madsnp, "data/output_data/madsnp/nyc_madsnp.csv", row.names = TRUE)
 write.csv(nyc_metro_madsnp, "data/output_data/madsnp/nyc_metro_madsnp.csv", row.names = TRUE)
 write.csv(nys_madsnp, "data/output_data/madsnp/nys_madsnp.csv", row.names = TRUE)
 ```
 
-# Create Plots
+# Plots for NYC Enrollment Data
+
+## MAP Plans
 
 ``` r
+# first pivot data to long format 
 nyc_map_long <-
   nyc_map %>%
    pivot_longer(
@@ -448,13 +456,79 @@ nyc_map_long %>%
   geom_path() + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   theme(legend.position = "bottom", legend.box = "horizontal") + 
-  theme(legend.text = element_text(size = 4.5),
-        legend.key.size = unit(0.3, "cm")) + 
+  theme(legend.text = element_text(size = 4.0),
+        legend.key.size = unit(0.2, "cm")) + 
   labs(
     title = "NYC MAP Plan Enrollment",
     x = "Month",
-    y = "Enrollment") +
-  guides(fill = guide_legend(title = "Plan"))
+    y = "Enrollment",
+    color = "Plan")
+```
+
+![](cms_enrollment_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+``` r
+# limited y-axis range - healthfirst removed
+nyc_map_long %>%  
+  ggplot(aes(x = month, y = enrollment, group = plan_name, color = plan_name)) + 
+  geom_path() + 
+  ylim(0, 3500) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(legend.position = "bottom", legend.box = "horizontal") + 
+  theme(legend.text = element_text(size = 3.0),
+        legend.key.size = unit(0.2, "cm")) + 
+  labs(
+    title = "NYC MAP Plan Enrollment",
+    x = "Month",
+    y = "Enrollment",
+    color = "Plan")
+```
+
+![](cms_enrollment_files/figure-gfm/unnamed-chunk-12-2.png)<!-- -->
+
+## MA D-SNP Plans
+
+``` r
+# first pivot data to long format 
+nyc_madsnp_long <-
+  nyc_madsnp %>%
+   pivot_longer(
+    "2021_01":"2023_02",
+    names_to = "month",
+    values_to = "enrollment",
+    names_prefix = "month") 
+
+nyc_madsnp_long %>%  
+  ggplot(aes(x = month, y = enrollment, group = plan_name, color = plan_name)) + 
+  geom_path() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(legend.position = "bottom", legend.box = "horizontal") + 
+  theme(legend.text = element_text(size = 4.0),
+        legend.key.size = unit(0.2, "cm")) + 
+  labs(
+    title = "NYC MA D-SNP Plan Enrollment",
+    x = "Month",
+    y = "Enrollment",
+    color = "Plan")
 ```
 
 ![](cms_enrollment_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+
+``` r
+# limited y-axis range - healthfirst and 1 united plan removed
+nyc_madsnp_long %>%  
+  ggplot(aes(x = month, y = enrollment, group = plan_name, color = plan_name)) + 
+  geom_path() + 
+  ylim(0, 30000) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(legend.position = "bottom", legend.box = "horizontal") + 
+  theme(legend.text = element_text(size = 3.0),
+        legend.key.size = unit(0.1, "cm")) + 
+  labs(
+    title = "NYC MA D-SNP Plan Enrollment",
+    x = "Month",
+    y = "Enrollment",
+    color = "Plan")
+```
+
+![](cms_enrollment_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
