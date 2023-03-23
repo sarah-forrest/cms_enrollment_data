@@ -1,10 +1,11 @@
-CMS Monthly Enrollment Data Extraction - All months
+CMS Monthly Enrollment Data Extraction - All Months
 ================
 Sarah Forrest
 
 ``` r
 library(tidyverse)
 library(stringr)
+library(gdata)
 ```
 
 Monthly enrollment data at the contract/plan/state/county level was
@@ -98,16 +99,16 @@ madsnp_blank <- sapply(madsnp_blank, as.character)
 madsnp_blank[is.na(madsnp_blank)] <- "" # replace NA with blank
 
 
-df_name_map = str_c(yyyy_mm, "_map")
-df_name_madsnp = str_c(yyyy_mm, "_madsnp")
+df_name_map = str_c("map_", yyyy_mm)
+df_name_madsnp = str_c("madsnp_", yyyy_mm)
 
-assign(x = df_name_map, value = map, envir = globalenv())
-assign(x = df_name_madsnp, value = madsnp, envir = globalenv())
+assign(x = df_name_map, value = map, envir = globalenv()) # or map_blank
+assign(x = df_name_madsnp, value = madsnp, envir = globalenv()) # or madsnp_blank
 
 save_path_map = str_c("data/output_data/map/", df_name_map, ".csv")
 save_path_madsnp = str_c("data/output_data/madsnp/", df_name_madsnp, ".csv")
 
-write.csv(map_blank ,save_path_map, row.names = TRUE)
+write.csv(map_blank,save_path_map, row.names = TRUE)
 write.csv(madsnp_blank, save_path_madsnp, row.names = TRUE)
 }
 ```
@@ -143,3 +144,1052 @@ enrollment_data(yyyy_mm = "2021_03")
 enrollment_data(yyyy_mm = "2021_02")
 enrollment_data(yyyy_mm = "2021_01")
 ```
+
+Merge the data together
+
+NYC MAP:
+
+``` r
+# initialize nyc_map as an empty dataframe
+nyc_map <- data.frame()
+
+# iterate over each month and year
+for (year in 2021:2023) {
+  for (month in 1:12) {
+    # create the name of the dataframe to be merged
+    map_name <- paste0("map_", year, "_", sprintf("%02d", month))
+    
+    # Check if object exists
+    if (exists(map_name)) {
+      # merge the current dataframe with nyc_metro_map
+      if (nrow(nyc_map) == 0) {
+        # if nyc_metro_map is empty, just add the current dataframe to it
+        nyc_map <- get(map_name)[ , c("h_number", "nyc_total")]
+      } else {
+        # if nyc_metro_map is not empty, merge the current dataframe with it
+        merge_cols <- c("h_number")
+        nyc_map <- merge(nyc_map, 
+                         get(map_name)[ , c("h_number", "nyc_total")], 
+                         by = merge_cols,
+                         all = TRUE)
+        # Clean up suffixes in column names
+        colnames(nyc_map) <- gsub("_x$", "", colnames(nyc_map))
+        colnames(nyc_map) <- gsub("_y$", "", colnames(nyc_map))
+      }
+    } else {
+      # Object does not exist, so skip this iteration
+      next
+    }
+  }
+}
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y' are duplicated in the
+## result
+
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y' are duplicated in the
+## result
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are
+## duplicated in the result
+
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are
+## duplicated in the result
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are duplicated in the
+## result
+
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are duplicated in the
+## result
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are
+## duplicated in the result
+
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are
+## duplicated in the result
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are duplicated in the
+## result
+
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are duplicated in the
+## result
+## Warning in merge.data.frame(nyc_map, get(map_name)[, c("h_number",
+## "nyc_total")], : column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y' are duplicated in the result
+```
+
+NYC Metro MAP:
+
+``` r
+# initialize nyc_metro_map as an empty dataframe
+nyc_metro_map <- data.frame()
+
+# iterate over each month and year
+for (year in 2021:2023) {
+  for (month in 1:12) {
+    # create the name of the dataframe to be merged
+    map_name <- paste0("map_", year, "_", sprintf("%02d", month))
+    
+    # Check if object exists
+    if (exists(map_name)) {
+      # merge the current dataframe with nyc_metro_metro_map
+      if (nrow(nyc_metro_map) == 0) {
+        # if nyc_metro_metro_map is empty, just add the current dataframe to it
+        nyc_metro_map <- get(map_name)[ , c("h_number", "nyc_metro_total")]
+      } else {
+        # if nyc_metro_metro_map is not empty, merge the current dataframe with it
+        merge_cols <- c("h_number")
+        nyc_metro_map <- merge(nyc_metro_map, 
+                         get(map_name)[ , c("h_number", "nyc_metro_total")], 
+                         by = merge_cols,
+                         all = TRUE)
+        # Clean up suffixes in column names
+        colnames(nyc_metro_map) <- gsub("_x$", "", colnames(nyc_metro_map))
+        colnames(nyc_metro_map) <- gsub("_y$", "", colnames(nyc_metro_map))
+      }
+    } else {
+      # Object does not exist, so skip this iteration
+      next
+    }
+  }
+}
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in the
+## result
+
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in the
+## result
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in
+## the result
+
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in
+## the result
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in
+## the result
+
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in
+## the result
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in
+## the result
+
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in
+## the result
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_metro_map, get(map_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in
+## the result
+```
+
+NYS MAP:
+
+``` r
+# initialize nys_map as an empty dataframe
+nys_map <- data.frame()
+
+# iterate over each month and year
+for (year in 2021:2023) {
+  for (month in 1:12) {
+    # create the name of the dataframe to be merged
+    map_name <- paste0("map_", year, "_", sprintf("%02d", month))
+    
+    # Check if object exists
+    if (exists(map_name)) {
+      # merge the current dataframe with nys_metro_map
+      if (nrow(nys_map) == 0) {
+        # if nys_metro_map is empty, just add the current dataframe to it
+        nys_map <- get(map_name)[ , c("h_number", "nys_total")]
+      } else {
+        # if nys_metro_map is not empty, merge the current dataframe with it
+        merge_cols <- c("h_number")
+        nys_map <- merge(nys_map, 
+                         get(map_name)[ , c("h_number", "nys_total")], 
+                         by = merge_cols,
+                         all = TRUE)
+        # Clean up suffixes in column names
+        colnames(nys_map) <- gsub("_x$", "", colnames(nys_map))
+        colnames(nys_map) <- gsub("_y$", "", colnames(nys_map))
+      }
+    } else {
+      # Object does not exist, so skip this iteration
+      next
+    }
+  }
+}
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y' are duplicated in the
+## result
+
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y' are duplicated in the
+## result
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y' are duplicated in the result
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y' are duplicated in the result
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y' are
+## duplicated in the result
+
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y' are
+## duplicated in the result
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y' are duplicated in the result
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y' are duplicated in the
+## result
+
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y' are duplicated in the
+## result
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y' are duplicated in the result
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y' are duplicated in the result
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y' are
+## duplicated in the result
+
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y' are
+## duplicated in the result
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y' are duplicated in the result
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y' are duplicated in the
+## result
+
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y' are duplicated in the
+## result
+## Warning in merge.data.frame(nys_map, get(map_name)[, c("h_number",
+## "nys_total")], : column names 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y' are duplicated in the result
+```
+
+NYC MA D-SNP:
+
+``` r
+# initialize nyc_madsnp as an empty dataframe
+nyc_madsnp <- data.frame()
+
+# iterate over each month and year
+for (year in 2021:2023) {
+  for (month in 1:12) {
+    # create the name of the dataframe to be merged
+    madsnp_name <- paste0("madsnp_", year, "_", sprintf("%02d", month))
+    
+    # Check if object exists
+    if (exists(madsnp_name)) {
+      # merge the current dataframe with nyc_metro_madsnp
+      if (nrow(nyc_madsnp) == 0) {
+        # if nyc_metro_madsnp is empty, just add the current dataframe to it
+        nyc_madsnp <- get(madsnp_name)[ , c("h_number", "nyc_total")]
+      } else {
+        # if nyc_metro_madsnp is not empty, merge the current dataframe with it
+        merge_cols <- c("h_number")
+        nyc_madsnp <- merge(nyc_madsnp, 
+                         get(madsnp_name)[ , c("h_number", "nyc_total")], 
+                         by = merge_cols,
+                         all = TRUE)
+        # Clean up suffixes in column names
+        colnames(nyc_madsnp) <- gsub("_x$", "", colnames(nyc_madsnp))
+        colnames(nyc_madsnp) <- gsub("_y$", "", colnames(nyc_madsnp))
+      }
+    } else {
+      # Object does not exist, so skip this iteration
+      next
+    }
+  }
+}
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are
+## duplicated in the result
+
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are
+## duplicated in the result
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are duplicated in the
+## result
+
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are duplicated in the
+## result
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are
+## duplicated in the result
+
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are
+## duplicated in the result
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are duplicated in the
+## result
+
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are duplicated in the
+## result
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y',
+## 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x',
+## 'nyc_total.y', 'nyc_total.x', 'nyc_total.y', 'nyc_total.x', 'nyc_total.y' are
+## duplicated in the result
+```
+
+NYC Metro MA D-SNP:
+
+``` r
+# initialize nyc_metro_madsnp as an empty dataframe
+nyc_metro_madsnp <- data.frame()
+
+# iterate over each month and year
+for (year in 2021:2023) {
+  for (month in 1:12) {
+    # create the name of the dataframe to be merged
+    madsnp_name <- paste0("madsnp_", year, "_", sprintf("%02d", month))
+    
+    # Check if object exists
+    if (exists(madsnp_name)) {
+      # merge the current dataframe with nyc_metro_metro_madsnp
+      if (nrow(nyc_metro_madsnp) == 0) {
+        # if nyc_metro_metro_madsnp is empty, just add the current dataframe to it
+        nyc_metro_madsnp <- get(madsnp_name)[ , c("h_number", "nyc_metro_total")]
+      } else {
+        # if nyc_metro_metro_madsnp is not empty, merge the current dataframe with it
+        merge_cols <- c("h_number")
+        nyc_metro_madsnp <- merge(nyc_metro_madsnp, 
+                         get(madsnp_name)[ , c("h_number", "nyc_metro_total")], 
+                         by = merge_cols,
+                         all = TRUE)
+        # Clean up suffixes in column names
+        colnames(nyc_metro_madsnp) <- gsub("_x$", "", colnames(nyc_metro_madsnp))
+        colnames(nyc_metro_madsnp) <- gsub("_y$", "", colnames(nyc_metro_madsnp))
+      }
+    } else {
+      # Object does not exist, so skip this iteration
+      next
+    }
+  }
+}
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in the
+## result
+
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in the
+## result
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in
+## the result
+
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in
+## the result
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in
+## the result
+
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in
+## the result
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in
+## the result
+
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in
+## the result
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y' are duplicated in the result
+## Warning in merge.data.frame(nyc_metro_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y',
+## 'nyc_metro_total.x', 'nyc_metro_total.y', 'nyc_metro_total.x',
+## 'nyc_metro_total.y', 'nyc_metro_total.x', 'nyc_metro_total.y' are duplicated in
+## the result
+```
+
+NYS MA D-SNP:
+
+``` r
+# initialize nys_madsnp as an empty dataframe
+nys_madsnp <- data.frame()
+
+# iterate over each month and year
+for (year in 2021:2023) {
+  for (month in 1:12) {
+    # create the name of the dataframe to be merged
+    madsnp_name <- paste0("madsnp_", year, "_", sprintf("%02d", month))
+    
+    # Check if object exists
+    if (exists(madsnp_name)) {
+      # merge the current dataframe with nys_metro_madsnp
+      if (nrow(nys_madsnp) == 0) {
+        # if nys_metro_madsnp is empty, just add the current dataframe to it
+        nys_madsnp <- get(madsnp_name)[ , c("h_number", "nys_total")]
+      } else {
+        # if nys_metro_madsnp is not empty, merge the current dataframe with it
+        merge_cols <- c("h_number")
+        nys_madsnp <- merge(nys_madsnp, 
+                         get(madsnp_name)[ , c("h_number", "nys_total")], 
+                         by = merge_cols,
+                         all = TRUE)
+        # Clean up suffixes in column names
+        colnames(nys_madsnp) <- gsub("_x$", "", colnames(nys_madsnp))
+        colnames(nys_madsnp) <- gsub("_y$", "", colnames(nys_madsnp))
+      }
+    } else {
+      # Object does not exist, so skip this iteration
+      next
+    }
+  }
+}
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y' are duplicated in the result
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y' are
+## duplicated in the result
+
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y' are
+## duplicated in the result
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y' are duplicated in the result
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y' are duplicated in the
+## result
+
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y' are duplicated in the
+## result
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y' are duplicated in the result
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y' are duplicated in the result
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y' are
+## duplicated in the result
+
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y' are
+## duplicated in the result
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y' are duplicated in the result
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y' are duplicated in the
+## result
+
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y' are duplicated in the
+## result
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y' are duplicated in the result
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y' are duplicated in the result
+
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y' are duplicated in the result
+## Warning in merge.data.frame(nys_madsnp, get(madsnp_name)[, c("h_number", :
+## column names 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y',
+## 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x',
+## 'nys_total.y', 'nys_total.x', 'nys_total.y', 'nys_total.x', 'nys_total.y' are
+## duplicated in the result
+```
+
+Add column names to all MAP and MA D-SNP dataframes
+
+``` r
+# create column names vector
+col_name_vector_forward = c("h_number", "2021_01", "2021_02", "2021_03", "2021_04", "2021_05", "2021_06", "2021_07", "2021_08", "2021_09", "2021_10", "2021_11", "2021_12", "2022_01", "2022_02", "2022_03", "2022_04", "2022_05", "2022_06", "2022_07", "2022_08", "2022_09", "2022_10", "2022_11", "2022_12", "2023_01", "2023_02")
+
+# applying colnames
+colnames(nyc_map) = col_name_vector_forward
+colnames(nyc_metro_map) = col_name_vector_forward
+colnames(nys_map) = col_name_vector_forward
+
+colnames(nyc_madsnp) = col_name_vector_forward
+colnames(nyc_metro_madsnp) = col_name_vector_forward
+colnames(nys_madsnp) = col_name_vector_forward
+```
+
+Add plan names to all MAP dataframes
+
+``` r
+map_plan_names <- map_2023_02 %>%
+  select(plan_name, h_number) 
+
+nyc_map <- inner_join(nyc_map, map_plan_names, by = "h_number") %>%
+  select(plan_name, everything()) 
+  # %>% mutate(plan_name = gsub("(HMO D-SNP)$", "", plan_name))
+
+nyc_metro_map <- inner_join(nyc_metro_map, map_plan_names, by = "h_number") %>%
+  select(plan_name, everything())
+
+nys_map <- inner_join(nys_map, map_plan_names, by = "h_number") %>%
+  select(plan_name, everything())
+```
+
+Add plan names to all MA D-SNP dataframes
+
+``` r
+madsnp_plan_names <- madsnp_2023_02 %>%
+  select(plan_name, h_number)
+
+nyc_madsnp <- inner_join(nyc_madsnp, madsnp_plan_names, by = "h_number") %>%
+  select(plan_name, everything())
+
+nyc_metro_madsnp <- inner_join(nyc_metro_madsnp, madsnp_plan_names, by = "h_number") %>%
+  select(plan_name, everything())
+
+nys_madsnp <- inner_join(nys_madsnp, madsnp_plan_names, by = "h_number") %>%
+  select(plan_name, everything())
+```
+
+Save datasets
+
+``` r
+write.csv(nyc_map, "data/output_data/map/nyc_map.csv", row.names = TRUE)
+write.csv(nyc_metro_map, "data/output_data/map/nyc_map.csv", row.names = TRUE)
+write.csv(nys_map, "data/output_data/map/nys_map.csv", row.names = TRUE)
+
+write.csv(nyc_madsnp, "data/output_data/madsnp/nyc_madsnp.csv", row.names = TRUE)
+write.csv(nyc_metro_madsnp, "data/output_data/madsnp/nyc_madsnp.csv", row.names = TRUE)
+write.csv(nys_madsnp, "data/output_data/madsnp/nys_madsnp.csv", row.names = TRUE)
+```
+
+# Create Plots
