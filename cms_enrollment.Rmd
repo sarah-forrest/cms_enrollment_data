@@ -8,7 +8,7 @@ output: github_document
 knitr::opts_chunk$set(collapse = TRUE, message = FALSE, warning = FALSE, dpi = 300, fig.width = 7)
 ```
 
-```{r load packages}
+```{r load packages, include=FALSE}
 library(tidyverse)
 library(stringr)
 library(gdata)
@@ -411,14 +411,37 @@ nys_madsnp <- inner_join(nys_madsnp, madsnp_plan_names, by = "h_number") %>%
 nys_madsnp[is.na(nys_madsnp)] <- 0 # replace NA with 0s
 ```
 
+Preview datasets:
+
 ```{r}
-# save datasets as CSV files
-  # map datasets
+nyc_map %>%
+  knitr::kable()
+
+nyc_metro_map %>%
+  knitr::kable()
+
+nys_map %>%
+  knitr::kable()
+
+nyc_madsnp %>%
+  knitr::kable()
+
+nyc_metro_madsnp %>%
+  knitr::kable()
+
+nys_madsnp %>%
+  knitr::kable()
+```
+
+Save datasets as CSV files: 
+
+```{r}
+# map datasets
 write.csv(nyc_map, "data/output_data/map/nyc_map.csv", row.names = TRUE)
 write.csv(nyc_metro_map, "data/output_data/map/nyc_metro_map.csv", row.names = TRUE)
 write.csv(nys_map, "data/output_data/map/nys_map.csv", row.names = TRUE)
 
-  # madsnp datasets
+# madsnp datasets
 write.csv(nyc_madsnp, "data/output_data/madsnp/nyc_madsnp.csv", row.names = TRUE)
 write.csv(nyc_metro_madsnp, "data/output_data/madsnp/nyc_metro_madsnp.csv", row.names = TRUE)
 write.csv(nys_madsnp, "data/output_data/madsnp/nys_madsnp.csv", row.names = TRUE)
@@ -428,29 +451,37 @@ write.csv(nys_madsnp, "data/output_data/madsnp/nys_madsnp.csv", row.names = TRUE
 
 ## MAP Plans
 
-```{r}
+```{r, echo = FALSE}
 # first pivot data to long format 
 nyc_map_long <-
   nyc_map %>%
    pivot_longer(
-    "2021_01":"2023_02",
+    "2021_01":"2023_02", # update here for additional months
     names_to = "month",
     values_to = "enrollment",
     names_prefix = "month") 
+```
 
+**All Plans:**
+
+```{r, echo = FALSE}
 nyc_map_long %>%  
   ggplot(aes(x = month, y = enrollment, group = plan_name, color = plan_name)) + 
   geom_path() + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   theme(legend.position = "bottom", legend.box = "horizontal") + 
-  theme(legend.text = element_text(size = 4.0),
-        legend.key.size = unit(0.2, "cm")) + 
+  theme(legend.text = element_text(size = 3.5),
+        legend.key.size = unit(0.3, "cm")) + 
   labs(
-    title = "NYC MAP Plan Enrollment",
+    title = "NYC MAP Plan Enrollment - All Plans",
     x = "Month",
     y = "Enrollment",
     color = "Plan")
+```
 
+**Plans < 3,500 Members (HealthFirst Removed)**
+
+```{r, echo = FALSE}
 # limited y-axis range - healthfirst removed
 nyc_map_long %>%  
   ggplot(aes(x = month, y = enrollment, group = plan_name, color = plan_name)) + 
@@ -458,10 +489,10 @@ nyc_map_long %>%
   ylim(0, 3500) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   theme(legend.position = "bottom", legend.box = "horizontal") + 
-  theme(legend.text = element_text(size = 3.0),
-        legend.key.size = unit(0.2, "cm")) + 
+  theme(legend.text = element_text(size = 3.5),
+        legend.key.size = unit(0.3, "cm")) + 
   labs(
-    title = "NYC MAP Plan Enrollment",
+    title = "NYC MAP Plan Enrollment - Plans < 3,500 Members",
     x = "Month",
     y = "Enrollment",
     color = "Plan")
@@ -469,29 +500,37 @@ nyc_map_long %>%
 
 ## MA D-SNP Plans
 
-```{r}
+```{r, echo = FALSE}
 # first pivot data to long format 
 nyc_madsnp_long <-
   nyc_madsnp %>%
    pivot_longer(
-    "2021_01":"2023_02",
+    "2021_01":"2023_02", # update here for additional months
     names_to = "month",
     values_to = "enrollment",
     names_prefix = "month") 
+```
 
+**All Plans:**
+
+```{r, echo = FALSE}
 nyc_madsnp_long %>%  
   ggplot(aes(x = month, y = enrollment, group = plan_name, color = plan_name)) + 
   geom_path() + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   theme(legend.position = "bottom", legend.box = "horizontal") + 
-  theme(legend.text = element_text(size = 4.0),
-        legend.key.size = unit(0.2, "cm")) + 
+  theme(legend.text = element_text(size = 3.0),
+        legend.key.size = unit(0.3, "cm")) + 
   labs(
-    title = "NYC MA D-SNP Plan Enrollment",
+    title = "NYC MA D-SNP Plan Enrollment - All Plans",
     x = "Month",
     y = "Enrollment",
     color = "Plan")
+```
 
+**Plans < 30,000 Members (HealthFirst and United Plan Removed)**
+
+```{r, echo = FALSE}
 # limited y-axis range - healthfirst and 1 united plan removed
 nyc_madsnp_long %>%  
   ggplot(aes(x = month, y = enrollment, group = plan_name, color = plan_name)) + 
@@ -500,10 +539,215 @@ nyc_madsnp_long %>%
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   theme(legend.position = "bottom", legend.box = "horizontal") + 
   theme(legend.text = element_text(size = 3.0),
-        legend.key.size = unit(0.1, "cm")) + 
+        legend.key.size = unit(0.3, "cm")) + 
   labs(
-    title = "NYC MA D-SNP Plan Enrollment",
+    title = "NYC MA D-SNP Plan Enrollment - Plans < 30,000 Members",
     x = "Month",
     y = "Enrollment",
     color = "Plan")
 ```
+
+# Plots for NYC Metro Enrollment Data
+
+## MAP Plans
+
+```{r, echo = FALSE}
+# first pivot data to long format 
+nyc_metro_map_long <-
+  nyc_metro_map %>%
+   pivot_longer(
+    "2021_01":"2023_02", # update here for additional months
+    names_to = "month",
+    values_to = "enrollment",
+    names_prefix = "month") 
+```
+
+**All Plans:**
+
+```{r, echo = FALSE}
+nyc_metro_map_long %>%  
+  ggplot(aes(x = month, y = enrollment, group = plan_name, color = plan_name)) + 
+  geom_path() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(legend.position = "bottom", legend.box = "horizontal") + 
+  theme(legend.text = element_text(size = 3.5),
+        legend.key.size = unit(0.3, "cm")) + 
+  labs(
+    title = "NYC Metro MAP Plan Enrollment - All Plans",
+    x = "Month",
+    y = "Enrollment",
+    color = "Plan")
+```
+
+**Plans < 3,500 Members (HealthFirst Removed)**
+
+```{r, echo = FALSE}
+# limited y-axis range - healthfirst removed
+nyc_metro_map_long %>%  
+  ggplot(aes(x = month, y = enrollment, group = plan_name, color = plan_name)) + 
+  geom_path() + 
+  ylim(0, 3500) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(legend.position = "bottom", legend.box = "horizontal") + 
+  theme(legend.text = element_text(size = 3.5),
+        legend.key.size = unit(0.3, "cm")) + 
+  labs(
+    title = "NYC Metro MAP Plan Enrollment - Plans < 3,500 Members",
+    x = "Month",
+    y = "Enrollment",
+    color = "Plan")
+```
+
+## MA D-SNP Plans
+
+```{r, echo = FALSE}
+# first pivot data to long format 
+nyc_metro_madsnp_long <-
+  nyc_metro_madsnp %>%
+   pivot_longer(
+    "2021_01":"2023_02", # update here for additional months
+    names_to = "month",
+    values_to = "enrollment",
+    names_prefix = "month") 
+```
+
+**All Plans:**
+
+```{r, echo = FALSE}
+nyc_metro_madsnp_long %>%  
+  ggplot(aes(x = month, y = enrollment, group = plan_name, color = plan_name)) + 
+  geom_path() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(legend.position = "bottom", legend.box = "horizontal") + 
+  theme(legend.text = element_text(size = 3.0),
+        legend.key.size = unit(0.3, "cm")) + 
+  labs(
+    title = "NYC Metro MA D-SNP Plan Enrollment - All Plans",
+    x = "Month",
+    y = "Enrollment",
+    color = "Plan")
+```
+
+**Plans < 30,000 Members (HealthFirst and United Plan Removed)**
+
+```{r, echo = FALSE}
+# limited y-axis range - healthfirst and 1 united plan removed
+nyc_metro_madsnp_long %>%  
+  ggplot(aes(x = month, y = enrollment, group = plan_name, color = plan_name)) + 
+  geom_path() + 
+  ylim(0, 30000) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(legend.position = "bottom", legend.box = "horizontal") + 
+  theme(legend.text = element_text(size = 3.0),
+        legend.key.size = unit(0.3, "cm")) + 
+  labs(
+    title = "NYC Metro MA D-SNP Plan Enrollment - Plans < 30,000 Members",
+    x = "Month",
+    y = "Enrollment",
+    color = "Plan")
+```
+
+# Plots for NYS Enrollment Data
+
+## MAP Plans
+
+```{r, echo = FALSE}
+# first pivot data to long format 
+nys_map_long <-
+  nys_map %>%
+   pivot_longer(
+    "2021_01":"2023_02", # update here for additional months
+    names_to = "month",
+    values_to = "enrollment",
+    names_prefix = "month") 
+```
+
+**All Plans:**
+
+```{r, echo = FALSE}
+nys_map_long %>%  
+  ggplot(aes(x = month, y = enrollment, group = plan_name, color = plan_name)) + 
+  geom_path() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(legend.position = "bottom", legend.box = "horizontal") + 
+  theme(legend.text = element_text(size = 3.5),
+        legend.key.size = unit(0.3, "cm")) + 
+  labs(
+    title = "NYS MAP Plan Enrollment - All Plans",
+    x = "Month",
+    y = "Enrollment",
+    color = "Plan")
+```
+
+**Plans < 3,500 Members (HealthFirst Removed)**
+
+```{r, echo = FALSE}
+# limited y-axis range - healthfirst removed
+nys_map_long %>%  
+  ggplot(aes(x = month, y = enrollment, group = plan_name, color = plan_name)) + 
+  geom_path() + 
+  ylim(0, 3500) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(legend.position = "bottom", legend.box = "horizontal") + 
+  theme(legend.text = element_text(size = 3.5),
+        legend.key.size = unit(0.3, "cm")) + 
+  labs(
+    title = "NYS MAP Plan Enrollment - Plans < 3,500 Members",
+    x = "Month",
+    y = "Enrollment",
+    color = "Plan")
+```
+
+## MA D-SNP Plans
+
+```{r, echo = FALSE}
+# first pivot data to long format 
+nys_madsnp_long <-
+  nys_madsnp %>%
+   pivot_longer(
+    "2021_01":"2023_02", # update here for additional months
+    names_to = "month",
+    values_to = "enrollment",
+    names_prefix = "month") 
+```
+
+**All Plans:**
+
+```{r, echo = FALSE}
+nys_madsnp_long %>%  
+  ggplot(aes(x = month, y = enrollment, group = plan_name, color = plan_name)) + 
+  geom_path() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(legend.position = "bottom", legend.box = "horizontal") + 
+  theme(legend.text = element_text(size = 3.0),
+        legend.key.size = unit(0.3, "cm")) + 
+  labs(
+    title = "NYS MA D-SNP Plan Enrollment - All Plans",
+    x = "Month",
+    y = "Enrollment",
+    color = "Plan")
+```
+
+**Plans < 50,000 Members (HealthFirst and United Plan Removed)**
+
+```{r, echo = FALSE}
+# limited y-axis range - healthfirst and 1 united plan removed
+nys_madsnp_long %>%  
+  ggplot(aes(x = month, y = enrollment, group = plan_name, color = plan_name)) + 
+  geom_path() + 
+  ylim(0, 50000) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(legend.position = "bottom", legend.box = "horizontal") + 
+  theme(legend.text = element_text(size = 3.0),
+        legend.key.size = unit(0.3, "cm")) + 
+  labs(
+    title = "NYS MA D-SNP Plan Enrollment - Plans < 50,000 Members",
+    x = "Month",
+    y = "Enrollment",
+    color = "Plan")
+```
+
+# Notes
+
+Instructions for adjusting code to account for new months of data:
+
