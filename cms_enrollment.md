@@ -2,6 +2,8 @@ CMS Monthly Enrollment Data Extraction - All Months
 ================
 Sarah Forrest
 
+# Data
+
 Monthly enrollment data at the contract/plan/state/county level was
 downloaded from CMS here:
 <https://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/MCRAdvPartDEnrolData/Monthly-Enrollment-by-Contract-Plan-State-County>
@@ -11,8 +13,10 @@ contract data file. Both files share the following common fields:
 `contract_number` (= `contract_id`) and `plan_id`. These two fields
 combined make up the H-number.
 
-The function below called `enrollment_data` reading in these files and
-creates 2 output files–one for MAP plans and one for MA D-SNP plans for
+# Overview
+
+The function below called `enrollment_data` reads in these files and
+creates 2 output files: one for MAP plans and one for MA D-SNP plans for
 any given month. The output dataset is restricted to health plans
 (i.e. H-numbers) of interest only. The function merges the contract data
 file and the enrollment data file together using the shared fields
@@ -28,7 +32,7 @@ datasets to wide format and calculates the following “total” variables:
 
 Finally, the function saves the resulting datasets in the R enviornment
 and creates a CSV file for both the MAP plan dataset and the MA D-SNP
-plan dataset.
+plan dataset:
 
 ``` r
 enrollment_data <- function(yyyy_mm) {
@@ -36,34 +40,37 @@ enrollment_data <- function(yyyy_mm) {
   path_enroll = str_c("data/raw_data/CPSC_Enrollment_", yyyy_mm, "/CPSC_Enrollment_Info_", yyyy_mm, ".csv")
   path_contract = str_c("data/raw_data/CPSC_Enrollment_", yyyy_mm, "/CPSC_Contract_Info_", yyyy_mm, ".csv")
 
+  # read in the enrollment data file
   enroll <- read_csv(path_enroll) %>%
     filter(State == "NY") %>%
     janitor::clean_names()
   
+  # read in the contract data file and restrict to map plans (h-numbers) of interest only
   contract_map <- read_csv(path_contract) %>%
   janitor::clean_names() %>%
-  mutate(h_number = str_c(contract_id, '-', plan_id)) %>%
+  mutate(h_number = str_c(contract_id, '-', plan_id)) %>% # create h-number variable
   filter(h_number %in% c("H3359-034", "H5549-003", "H3347-007", "H2168-002", "H6988-004", "H5599-003", "H0034-002", "H1732-001", "H5992-007", "H6776-002", "H4922-010", "H0423-007", "H5599-008"))
   
+  # read in the contract data file and restrict to madsnp plans (h-numbers) of interest only
   contract_madsnp = read_csv(path_contract) %>%
   janitor::clean_names() %>%
-  mutate(h_number = str_c(contract_id, '-', plan_id)) %>%
+  mutate(h_number = str_c(contract_id, '-', plan_id)) %>% # create h-number variable
   filter(h_number %in% c("H3312-069", "H4922-003", "H6988-002", "H3347-002", "H3330-042", "H5991-010", "H8432-007", "H8432-028", "H1732-003", "H0034-001", "H3359-021", "H3533-034", "H5970-026", "H0423-001", "H5992-008", "H0271-060", "H3387-014", "H3387-015", "H2168-001", "H2168-003","H5549-011", "H5599-001"))
   
-
+# join the enrollment and contract data files
 map = 
-  inner_join(enroll, contract_map, by = c("contract_number" = "contract_id", "plan_id" = "plan_id")) %>%
+  inner_join(enroll, contract_map, by = c("contract_number" = "contract_id", "plan_id" = "plan_id")) %>% # specify shared variables
   select(h_number, contract_number, plan_id, organization_marketing_name, plan_name, plan_type, county, enrollment) %>%
-  mutate(enrollment = case_when(enrollment == "*" ~ "0", enrollment != "*" ~ enrollment)) %>%
+  mutate(enrollment = case_when(enrollment == "*" ~ "0", enrollment != "*" ~ enrollment)) %>% # set cells with missing data (enrollment < 10) to 0 - note that this makes the enrollment totals an underestimate of the true number
   mutate(enrollment = as.numeric(enrollment)) %>%
-  pivot_wider(names_from = county, values_from = enrollment) %>%
+  pivot_wider(names_from = county, values_from = enrollment) %>% # make data wide format for readability ease
   janitor::clean_names() %>%
   select(order(colnames(.))) %>%
   select(h_number, contract_number, plan_id, organization_marketing_name, plan_name, plan_type, everything()) %>%
   mutate(
-    nyc_total = (sum = rowSums(dplyr::select(., new_york, bronx, kings, queens, richmond), na.rm = TRUE)),
-    nyc_metro_total = (sum = rowSums(dplyr::select(., new_york, bronx, kings, queens, richmond, nassau, suffolk, westchester, rockland), na.rm = TRUE)),
-    nys_total = (sum = rowSums(dplyr::select(., albany:westchester), na.rm = TRUE))) %>% # only to westchester here rather than yates because files from 2021 and earlier don't have a column for yates
+    nyc_total = (sum = rowSums(dplyr::select(., new_york, bronx, kings, queens, richmond), na.rm = TRUE)), # calculate nyc total
+    nyc_metro_total = (sum = rowSums(dplyr::select(., new_york, bronx, kings, queens, richmond, nassau, suffolk, westchester, rockland), na.rm = TRUE)), # calculate nyc metro total
+    nys_total = (sum = rowSums(dplyr::select(., albany:westchester), na.rm = TRUE))) %>% # calculate nys total - only to westchester here rather than yates because files from 2021 and earlier don't have a column for yates
   select(organization_marketing_name, plan_name, h_number, contract_number, plan_id, plan_type, nyc_total, nyc_metro_total, nys_total, everything())
         
 madsnp = 
@@ -82,23 +89,24 @@ madsnp =
   select(organization_marketing_name, plan_name, h_number, contract_number, plan_id, plan_type, nyc_total, nyc_metro_total, nys_total, everything())
 
 
-map_blank <- map %>% # replicate dataset to create a blank version
+map_blank <- map %>% # replicate dataset to create a version with blank cells rather than NAs
   select(-organization_marketing_name, -contract_number, -plan_id, -plan_type) # select only necessary variables
 map_blank <- sapply(map_blank, as.character) 
 map_blank[is.na(map_blank)] <- "" # replace NA with blank
 
-madsnp_blank <- madsnp %>% # replicate dataset to create a blank version
+madsnp_blank <- madsnp %>% # replicate dataset to create a version with blank cells rather than NAs
   select(-organization_marketing_name, -contract_number, -plan_id, -plan_type) # select only necessary variables
 madsnp_blank <- sapply(madsnp_blank, as.character) 
 madsnp_blank[is.na(madsnp_blank)] <- "" # replace NA with blank
 
-
+# name each resulting dataset based on the month and year of the input data files
 df_name_map = str_c("map_", yyyy_mm)
 df_name_madsnp = str_c("madsnp_", yyyy_mm)
 
 assign(x = df_name_map, value = map, envir = globalenv()) # or map_blank
 assign(x = df_name_madsnp, value = madsnp, envir = globalenv()) # or madsnp_blank
 
+# save datasets as csv files
 save_path_map = str_c("data/output_data/map/", df_name_map, ".csv")
 save_path_madsnp = str_c("data/output_data/madsnp/", df_name_madsnp, ".csv")
 
@@ -108,10 +116,10 @@ write.csv(madsnp_blank, save_path_madsnp, row.names = TRUE)
 ```
 
 The `enrollment_data` function above is applied to all months of data
-from 2021 - present.
+from 2021 - present:
 
 ``` r
-enrollment_data(yyyy_mm = "2023_02")  # Note: must add new row above here for new months after 02/2023
+enrollment_data(yyyy_mm = "2023_02")  # note: must add new row above here for new months
 enrollment_data(yyyy_mm = "2023_01")
 enrollment_data(yyyy_mm = "2022_12")
 enrollment_data(yyyy_mm = "2022_11")
@@ -139,17 +147,17 @@ enrollment_data(yyyy_mm = "2021_02")
 enrollment_data(yyyy_mm = "2021_01")
 ```
 
-The functions below create time series datasets for MAP and MA D-SNP
-plans by Region (NYC, NYC Metro Area, NYS)
-
-NYC MAP:
+The functions and code blocks below create time series datasets for MAP
+and MA D-SNP plans by Region (NYC, NYC Metro Area, NYS) and adjust the
+column names:
 
 ``` r
+# NYC MAP
 # initialize nyc_map as an empty dataframe
 nyc_map <- data.frame()
 
 # iterate over each month and year
-for (year in 2021:2023) {
+for (year in 2021:2023) { # note: adjust if beyond 2023
   for (month in 1:12) {
     # create the name of the dataframe to be merged
     map_name <- paste0("map_", year, "_", sprintf("%02d", month))
@@ -179,14 +187,13 @@ for (year in 2021:2023) {
 }
 ```
 
-NYC Metro MAP:
-
 ``` r
+# NYC Metro MAP
 # initialize nyc_metro_map as an empty dataframe
 nyc_metro_map <- data.frame()
 
 # iterate over each month and year
-for (year in 2021:2023) {
+for (year in 2021:2023) { # note: adjust if beyond 2023
   for (month in 1:12) {
     # create the name of the dataframe to be merged
     map_name <- paste0("map_", year, "_", sprintf("%02d", month))
@@ -216,14 +223,13 @@ for (year in 2021:2023) {
 }
 ```
 
-NYS MAP:
-
 ``` r
+# NYS MAP
 # initialize nys_map as an empty dataframe
 nys_map <- data.frame()
 
 # iterate over each month and year
-for (year in 2021:2023) {
+for (year in 2021:2023) { # note: adjust if beyond 2023
   for (month in 1:12) {
     # create the name of the dataframe to be merged
     map_name <- paste0("map_", year, "_", sprintf("%02d", month))
@@ -253,14 +259,13 @@ for (year in 2021:2023) {
 }
 ```
 
-NYC MA D-SNP:
-
 ``` r
+# NYC MA D-SNP
 # initialize nyc_madsnp as an empty dataframe
 nyc_madsnp <- data.frame()
 
 # iterate over each month and year
-for (year in 2021:2023) {
+for (year in 2021:2023) { # note: adjust if beyond 2023
   for (month in 1:12) {
     # create the name of the dataframe to be merged
     madsnp_name <- paste0("madsnp_", year, "_", sprintf("%02d", month))
@@ -290,14 +295,13 @@ for (year in 2021:2023) {
 }
 ```
 
-NYC Metro MA D-SNP:
-
 ``` r
+# NYC Metro MA D-SNP
 # initialize nyc_metro_madsnp as an empty dataframe
 nyc_metro_madsnp <- data.frame()
 
 # iterate over each month and year
-for (year in 2021:2023) {
+for (year in 2021:2023) { # note: adjust if beyond 2023
   for (month in 1:12) {
     # create the name of the dataframe to be merged
     madsnp_name <- paste0("madsnp_", year, "_", sprintf("%02d", month))
@@ -327,14 +331,13 @@ for (year in 2021:2023) {
 }
 ```
 
-NYS MA D-SNP:
-
 ``` r
+# NYS MA D-SNP
 # initialize nys_madsnp as an empty dataframe
 nys_madsnp <- data.frame()
 
 # iterate over each month and year
-for (year in 2021:2023) {
+for (year in 2021:2023) { # note: adjust if beyond 2023
   for (month in 1:12) {
     # create the name of the dataframe to be merged
     madsnp_name <- paste0("madsnp_", year, "_", sprintf("%02d", month))
@@ -364,37 +367,34 @@ for (year in 2021:2023) {
 }
 ```
 
-Add column names to all MAP and MA D-SNP dataframes
-
 ``` r
-# create column names vector
-col_name_vector_forward = c("h_number", "2021_01", "2021_02", "2021_03", "2021_04", "2021_05", "2021_06", "2021_07", "2021_08", "2021_09", "2021_10", "2021_11", "2021_12", "2022_01", "2022_02", "2022_03", "2022_04", "2022_05", "2022_06", "2022_07", "2022_08", "2022_09", "2022_10", "2022_11", "2022_12", "2023_01", "2023_02") # Note: must add new column name here for new months after 02/2023
+# Add column names to all MAP and MA D-SNP dataframes
+  # create column names vector
+col_name_vector_forward = c("h_number", "2021_01", "2021_02", "2021_03", "2021_04", "2021_05", "2021_06", "2021_07", "2021_08", "2021_09", "2021_10", "2021_11", "2021_12", "2022_01", "2022_02", "2022_03", "2022_04", "2022_05", "2022_06", "2022_07", "2022_08", "2022_09", "2022_10", "2022_11", "2022_12", "2023_01", "2023_02") # note: must add new column name here for new months
 
-# applying colnames
-  # map datasets
+  # applying colnames
+    # map datasets
 colnames(nyc_map) = col_name_vector_forward
 colnames(nyc_metro_map) = col_name_vector_forward
 colnames(nys_map) = col_name_vector_forward
 
-  # madsnp datasets
+    # madsnp datasets
 colnames(nyc_madsnp) = col_name_vector_forward
 colnames(nyc_metro_madsnp) = col_name_vector_forward
 colnames(nys_madsnp) = col_name_vector_forward
 ```
 
-Add `plan_name` column to the datasets by merging a month dataset with
-the time series dataset using the H-Number
-
 ``` r
-# Restrict month dataset to only the columns of interest (plan_name, h_number)
-map_plan_names <- map_2023_02 %>%
+# Add `plan_name` column to the datasets by merging a month dataset with the time series dataset using the H-number
+  # restrict month dataset to only the columns of interest (plan_name, h_number)
+map_plan_names <- map_2023_02 %>% # note: may need to adjust to more recent month/year dataset if new plans are added
   select(plan_name, h_number) 
 
-madsnp_plan_names <- madsnp_2023_02 %>%
+madsnp_plan_names <- madsnp_2023_02 %>% # note: may need to adjust to more recent month/year dataset if new plans are added
   select(plan_name, h_number)
 
-# join the datasets and move plan_name to the front
-  # map datasets
+  # join the datasets and move plan_name to the front
+    # map datasets
 nyc_map <- inner_join(nyc_map, map_plan_names, by = "h_number") %>%
   select(plan_name, everything())
 
@@ -404,7 +404,7 @@ nyc_metro_map <- inner_join(nyc_metro_map, map_plan_names, by = "h_number") %>%
 nys_map <- inner_join(nys_map, map_plan_names, by = "h_number") %>%
   select(plan_name, everything())
 
-  # madsnp datasets
+    # madsnp datasets
 nyc_madsnp <- inner_join(nyc_madsnp, madsnp_plan_names, by = "h_number") %>%
   select(plan_name, everything())
 nyc_madsnp[is.na(nyc_madsnp)] <- 0 # replace NA with 0s
@@ -418,12 +418,9 @@ nys_madsnp <- inner_join(nys_madsnp, madsnp_plan_names, by = "h_number") %>%
 nys_madsnp[is.na(nys_madsnp)] <- 0 # replace NA with 0s
 ```
 
-Preview datasets:
+Preview final time series datasets:
 
-``` r
-nyc_map %>%
-  knitr::kable()
-```
+**NYC MAP Enrollment**
 
 | plan_name                                            | h_number  | 2021_01 | 2021_02 | 2021_03 | 2021_04 | 2021_05 | 2021_06 | 2021_07 | 2021_08 | 2021_09 | 2021_10 | 2021_11 | 2021_12 | 2022_01 | 2022_02 | 2022_03 | 2022_04 | 2022_05 | 2022_06 | 2022_07 | 2022_08 | 2022_09 | 2022_10 | 2022_11 | 2022_12 | 2023_01 | 2023_02 |
 |:-----------------------------------------------------|:----------|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|
@@ -441,10 +438,7 @@ nyc_map %>%
 | RiverSpring MAP (HMO D-SNP)                          | H6776-002 |       0 |      11 |      14 |      41 |      43 |      47 |      49 |      50 |      47 |      55 |      55 |      57 |      55 |      58 |      68 |      72 |      72 |      80 |      80 |      93 |      99 |     104 |     112 |     122 |     130 |     147 |
 | Centers Plan for Medicaid Advantage Plus (HMO D-SNP) | H6988-004 |      50 |     153 |     276 |     366 |     431 |     475 |     478 |     526 |     565 |     595 |     637 |     635 |     746 |     865 |     950 |    1009 |    1040 |    1088 |    1107 |    1126 |    1155 |    1176 |    1181 |    1152 |    1186 |    1256 |
 
-``` r
-nyc_metro_map %>%
-  knitr::kable()
-```
+**NYC Metro MAP Enrollment**
 
 | plan_name                                            | h_number  | 2021_01 | 2021_02 | 2021_03 | 2021_04 | 2021_05 | 2021_06 | 2021_07 | 2021_08 | 2021_09 | 2021_10 | 2021_11 | 2021_12 | 2022_01 | 2022_02 | 2022_03 | 2022_04 | 2022_05 | 2022_06 | 2022_07 | 2022_08 | 2022_09 | 2022_10 | 2022_11 | 2022_12 | 2023_01 | 2023_02 |
 |:-----------------------------------------------------|:----------|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|
@@ -462,10 +456,7 @@ nyc_metro_map %>%
 | RiverSpring MAP (HMO D-SNP)                          | H6776-002 |       0 |      11 |      14 |      41 |      43 |      47 |      49 |      50 |      47 |      55 |      55 |      57 |      55 |      58 |      68 |      72 |      72 |      80 |      80 |      93 |      99 |     104 |     112 |     122 |     130 |     147 |
 | Centers Plan for Medicaid Advantage Plus (HMO D-SNP) | H6988-004 |      50 |     153 |     276 |     378 |     443 |     494 |     507 |     558 |     602 |     633 |     678 |     675 |     794 |     920 |    1009 |    1066 |    1099 |    1148 |    1173 |    1192 |    1226 |    1251 |    1257 |    1229 |    1264 |    1336 |
 
-``` r
-nys_map %>%
-  knitr::kable()
-```
+**NYS MAP Enrollment**
 
 | plan_name                                            | h_number  | 2021_01 | 2021_02 | 2021_03 | 2021_04 | 2021_05 | 2021_06 | 2021_07 | 2021_08 | 2021_09 | 2021_10 | 2021_11 | 2021_12 | 2022_01 | 2022_02 | 2022_03 | 2022_04 | 2022_05 | 2022_06 | 2022_07 | 2022_08 | 2022_09 | 2022_10 | 2022_11 | 2022_12 | 2023_01 | 2023_02 |
 |:-----------------------------------------------------|:----------|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|
@@ -483,10 +474,7 @@ nys_map %>%
 | RiverSpring MAP (HMO D-SNP)                          | H6776-002 |       0 |      11 |      14 |      41 |      43 |      47 |      49 |      50 |      47 |      55 |      55 |      57 |      55 |      58 |      68 |      72 |      72 |      80 |      80 |      93 |      99 |     104 |     112 |     122 |     130 |     147 |
 | Centers Plan for Medicaid Advantage Plus (HMO D-SNP) | H6988-004 |      50 |     153 |     276 |     378 |     443 |     494 |     507 |     558 |     602 |     633 |     678 |     675 |     794 |     920 |    1009 |    1066 |    1099 |    1148 |    1173 |    1192 |    1226 |    1251 |    1257 |    1229 |    1264 |    1336 |
 
-``` r
-nyc_madsnp %>%
-  knitr::kable()
-```
+**NYC MA D-SNP Enrollment**
 
 | plan_name                                                 | h_number  | 2021_01 | 2021_02 | 2021_03 | 2021_04 | 2021_05 | 2021_06 | 2021_07 | 2021_08 | 2021_09 | 2021_10 | 2021_11 | 2021_12 | 2022_01 | 2022_02 | 2022_03 | 2022_04 | 2022_05 | 2022_06 | 2022_07 | 2022_08 | 2022_09 | 2022_10 | 2022_11 | 2022_12 | 2023_01 | 2023_02 |
 |:----------------------------------------------------------|:----------|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|
@@ -513,10 +501,7 @@ nyc_madsnp %>%
 | Empire MediBlue Dual Advantage (HMO D-SNP)                | H8432-007 |    4180 |    4103 |    4039 |    3961 |    3847 |    3743 |    3681 |    3615 |    3538 |    3472 |    3424 |    3380 |    3252 |    3181 |    3101 |    3045 |    2972 |    2917 |    2862 |    2792 |    2753 |    2687 |    2652 |    2625 |    2554 |    2503 |
 | Empire MediBlue Dual Advantage Select (HMO D-SNP)         | H8432-028 |    5532 |    5163 |    4808 |    4664 |    4594 |    4539 |    4486 |    4376 |    4336 |    4267 |    4237 |    4199 |    4065 |    3902 |    3741 |    3623 |    3500 |    3403 |    3349 |    3251 |    3184 |    3141 |    3115 |    3080 |    2958 |    2915 |
 
-``` r
-nyc_metro_madsnp %>%
-  knitr::kable()
-```
+**NYC Metro MA D-SNP Enrollment**
 
 | plan_name                                                 | h_number  | 2021_01 | 2021_02 | 2021_03 | 2021_04 | 2021_05 | 2021_06 | 2021_07 | 2021_08 | 2021_09 | 2021_10 | 2021_11 | 2021_12 | 2022_01 | 2022_02 | 2022_03 | 2022_04 | 2022_05 | 2022_06 | 2022_07 | 2022_08 | 2022_09 | 2022_10 | 2022_11 | 2022_12 | 2023_01 | 2023_02 |
 |:----------------------------------------------------------|:----------|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|
@@ -543,10 +528,7 @@ nyc_metro_madsnp %>%
 | Empire MediBlue Dual Advantage (HMO D-SNP)                | H8432-007 |    4717 |    4635 |    4563 |    4474 |    4351 |    4235 |    4162 |    4085 |    3999 |    3941 |    3886 |    3840 |    3697 |    3627 |    3546 |    3489 |    3412 |    3355 |    3295 |    3213 |    3162 |    3091 |    3050 |    3022 |    2946 |    2880 |
 | Empire MediBlue Dual Advantage Select (HMO D-SNP)         | H8432-028 |    6684 |    6300 |    5907 |    5745 |    5686 |    5637 |    5596 |    5477 |    5427 |    5367 |    5304 |    5250 |    5111 |    4919 |    4729 |    4585 |    4443 |    4333 |    4273 |    4161 |    4077 |    4041 |    4010 |    3969 |    3811 |    3752 |
 
-``` r
-nys_madsnp %>%
-  knitr::kable()
-```
+**NYS MA D-SNP Enrollment**
 
 | plan_name                                                 | h_number  | 2021_01 | 2021_02 | 2021_03 | 2021_04 | 2021_05 | 2021_06 | 2021_07 | 2021_08 | 2021_09 | 2021_10 | 2021_11 | 2021_12 | 2022_01 | 2022_02 | 2022_03 | 2022_04 | 2022_05 | 2022_06 | 2022_07 | 2022_08 | 2022_09 | 2022_10 | 2022_11 | 2022_12 | 2023_01 | 2023_02 |
 |:----------------------------------------------------------|:----------|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|--------:|
@@ -587,68 +569,98 @@ write.csv(nyc_metro_madsnp, "data/output_data/madsnp/nyc_metro_madsnp.csv", row.
 write.csv(nys_madsnp, "data/output_data/madsnp/nys_madsnp.csv", row.names = TRUE)
 ```
 
-# Plots for NYC Enrollment Data
+# Plots
 
-## MAP Plans
+## NYC Enrollment Data
+
+### MAP Plans
 
 **All Plans:**
 
-![](cms_enrollment_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](cms_enrollment_files/figure-gfm/nyc%20map%20plot-1.png)<!-- -->
 
 **Plans \< 3,500 Members (HealthFirst Removed)**
 
-![](cms_enrollment_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](cms_enrollment_files/figure-gfm/nyc%20map%20reduced%20plot-1.png)<!-- -->
 
-## MA D-SNP Plans
+### MA D-SNP Plans
 
 **All Plans:**
 
-![](cms_enrollment_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](cms_enrollment_files/figure-gfm/nyc%20madsnp%20plot-1.png)<!-- -->
 
 **Plans \< 30,000 Members (HealthFirst and United Plan Removed)**
 
-![](cms_enrollment_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](cms_enrollment_files/figure-gfm/nyc%20madsnp%20reduced%20plot-1.png)<!-- -->
 
-# Plots for NYC Metro Enrollment Data
+## NYC Metro Enrollment Data
 
-## MAP Plans
+### MAP Plans
 
 **All Plans:**
 
-![](cms_enrollment_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](cms_enrollment_files/figure-gfm/nyc%20metro%20plot-1.png)<!-- -->
 
 **Plans \< 3,500 Members (HealthFirst Removed)**
 
-![](cms_enrollment_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](cms_enrollment_files/figure-gfm/nyc%20metro%20reduced%20plot-1.png)<!-- -->
 
-## MA D-SNP Plans
+### MA D-SNP Plans
 
 **All Plans:**
 
-![](cms_enrollment_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](cms_enrollment_files/figure-gfm/nyc%20metro%20madsnp%20plot-1.png)<!-- -->
 
 **Plans \< 30,000 Members (HealthFirst and United Plan Removed)**
 
-![](cms_enrollment_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+![](cms_enrollment_files/figure-gfm/nyc%20metro%20madsnp%20reduced%20plot-1.png)<!-- -->
 
-# Plots for NYS Enrollment Data
+## NYS Enrollment Data
 
-## MAP Plans
+### MAP Plans
 
 **All Plans:**
 
-![](cms_enrollment_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+![](cms_enrollment_files/figure-gfm/nys%20map%20plot-1.png)<!-- -->
 
 **Plans \< 3,500 Members (HealthFirst Removed)**
 
-![](cms_enrollment_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](cms_enrollment_files/figure-gfm/nys%20map%20reduced%20plot-1.png)<!-- -->
 
-## MA D-SNP Plans
+### MA D-SNP Plans
 
 **All Plans:**
 
-![](cms_enrollment_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](cms_enrollment_files/figure-gfm/nys%20madsnp%20plot-1.png)<!-- -->
 
 **Plans \< 50,000 Members (HealthFirst and United Plan Removed)**
 
-![](cms_enrollment_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+![](cms_enrollment_files/figure-gfm/nys%20madsnp%20reduced%20plot-1.png)<!-- -->
+
+# Notes
+
+Instructions for adding new months of data:
+
+1.  Download the zipped file folder for the new month from
+    <https://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/MCRAdvPartDEnrolData/Monthly-Enrollment-by-Contract-Plan-State-County>
+2.  Unzip the folder and save it in the data > raw_data folder within
+    the overarching folder holding this R project (cms_enrollment_data)
+3.  Add a new line of code to the top of the
+    `apply enrollment data function` code block to apply the function to
+    the new month of data using the following template (fill in the bold
+    characters): enrollment_data(yyyy_mm = “**yyyy**\_**mm**”)  
+4.  Add code for a new columns name to the end (before “)”) of the
+    `col_name_vector_forward` object string within the
+    `adjust column names for datasets` code block using the following
+    template (fill in the bold characters): , “**yyyy**\_**mm**”
+5.  Update the year/month of the most recent month of data in each of
+    the plot dataset code blocks (`nyc map plot dataset`,
+    `nyc madsnp plot dataset`, `nyc metro map plot dataset`,
+    `nyc metro madsnp plot dataset`, `nys map plot dataset`,
+    `nys madsnp plot dataset`) to include the new data in the enrollment
+    trend plots using the following template (fill in the bold
+    characters): “**yyyy**\_**mm**”
+
+Note: This Rmd file can be searched for “note:” to locate the lines
+within the code that may require adjustment ot account for new monthly
+data.
