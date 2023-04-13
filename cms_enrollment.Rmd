@@ -14,6 +14,10 @@ library(stringr)
 library(gdata)
 ```
 
+# Purpose
+
+The purpose of this R code file is to wrangle raw monthly health plan enrollment data obtained from the Centers for Medicare & Medicaid Services (CMS) website, and extract only the relevant data for MAP and MA D-SNP plans in the New York area. The code then combines the separate monthly enrollment datasets into large time series datasets to analyze trends in health plan enrollments over time. The resulting datasets are available for the New York City (NYC), NYC metro area, and New York State (NYS) geographic regions. The code is designed to ensure minimal editing and ease of use when new months of data become available. This allows for efficient and consistent analysis of health plan enrollment trends over time. Overall, the aim of this code is to provide insights into the changing landscape of health plan enrollments in the New York area, which can inform decision-making for healthcare providers, policymakers, and other stakeholders.
+
 # Data
 
 Monthly enrollment data at the contract/plan/state/county level was downloaded from CMS here: https://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/MCRAdvPartDEnrolData/Monthly-Enrollment-by-Contract-Plan-State-County
@@ -28,7 +32,7 @@ The function below called `enrollment_data` reads in these files and creates 2 o
 * New York City Metro Total: `nyc_metro_total` = the sum across NYC counties plus Nassau, Suffolk, Westchester, and Rockland counties
 * New York State Total: `nys_total` = the sum across all counties in New York
 
-Finally, the function saves the resulting datasets in the R enviornment and creates a CSV file for both the MAP plan dataset and the MA D-SNP plan dataset:
+Finally, the function saves the resulting datasets in the R environment and creates a CSV file for both the MAP plan dataset and the MA D-SNP plan dataset:
 
 ```{r enrollment data function}
 enrollment_data <- function(yyyy_mm) {
@@ -142,7 +146,7 @@ enrollment_data(yyyy_mm = "2021_02")
 enrollment_data(yyyy_mm = "2021_01")
 ```
 
-The functions and code blocks below create time series datasets for MAP and MA D-SNP plans by Region (NYC, NYC Metro Area, NYS) and adjust the column names:
+The functions and code blocks below create time series datasets for MAP and MA D-SNP plans by Region (NYC, NYC Metro Area, NYS) and adjusts the column names:
 
 ```{r nyc map time series dataset}
 # NYC MAP
@@ -360,7 +364,6 @@ for (year in 2021:2023) { # note: adjust if beyond 2023
 }
 ```
 
-
 ```{r adjust column names for datasets}
 # Add column names to all MAP and MA D-SNP dataframes
   # create column names vector
@@ -377,7 +380,6 @@ colnames(nyc_madsnp) = col_name_vector_forward
 colnames(nyc_metro_madsnp) = col_name_vector_forward
 colnames(nys_madsnp) = col_name_vector_forward
 ```
-
 
 ```{r add plan name column to datasets}
 # Add `plan_name` column to the datasets by merging a month dataset with the time series dataset using the H-number

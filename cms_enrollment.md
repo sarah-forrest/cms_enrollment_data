@@ -2,6 +2,23 @@ CMS Monthly Enrollment Data Extraction - All Months
 ================
 Sarah Forrest
 
+# Purpose
+
+The purpose of this R code file is to wrangle raw monthly health plan
+enrollment data obtained from the Centers for Medicare & Medicaid
+Services (CMS) website, and extract only the relevant data for MAP and
+MA D-SNP plans in the New York area. The code then combines the separate
+monthly enrollment datasets into large time series datasets to analyze
+trends in health plan enrollments over time. The resulting datasets are
+available for the New York City (NYC), NYC metro area, and New York
+State (NYS) geographic regions. The code is designed to ensure minimal
+editing and ease of use when new months of data become available. This
+allows for efficient and consistent analysis of health plan enrollment
+trends over time. Overall, the aim of this code is to provide insights
+into the changing landscape of health plan enrollments in the New York
+area, which can inform decision-making for healthcare providers,
+policymakers, and other stakeholders.
+
 # Data
 
 Monthly enrollment data at the contract/plan/state/county level was
@@ -30,7 +47,7 @@ datasets to wide format and calculates the following “total” variables:
 -   New York State Total: `nys_total` = the sum across all counties in
     New York
 
-Finally, the function saves the resulting datasets in the R enviornment
+Finally, the function saves the resulting datasets in the R environment
 and creates a CSV file for both the MAP plan dataset and the MA D-SNP
 plan dataset:
 
@@ -148,7 +165,7 @@ enrollment_data(yyyy_mm = "2021_01")
 ```
 
 The functions and code blocks below create time series datasets for MAP
-and MA D-SNP plans by Region (NYC, NYC Metro Area, NYS) and adjust the
+and MA D-SNP plans by Region (NYC, NYC Metro Area, NYS) and adjusts the
 column names:
 
 ``` r
@@ -639,27 +656,25 @@ write.csv(nys_madsnp, "data/output_data/madsnp/nys_madsnp.csv", row.names = TRUE
 
 # Notes
 
-Instructions for adding new months of data:
-
-1.  Download the zipped file folder for the new month from
-    <https://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/MCRAdvPartDEnrolData/Monthly-Enrollment-by-Contract-Plan-State-County>
-2.  Unzip the folder and save it in the data > raw_data folder within
-    the overarching folder holding this R project (cms_enrollment_data)
-3.  Add a new line of code to the top of the
-    `apply enrollment data function` code block to apply the function to
-    the new month of data using the following template (fill in the bold
-    characters): enrollment_data(yyyy_mm = “**yyyy**\_**mm**”)  
-4.  Add code for a new columns name to the end (before “)”) of the
-    `col_name_vector_forward` object string within the
-    `adjust column names for datasets` code block using the following
-    template (fill in the bold characters): , “**yyyy**\_**mm**”
-5.  Update the year/month of the most recent month of data in each of
-    the plot dataset code blocks (`nyc map plot dataset`,
-    `nyc madsnp plot dataset`, `nyc metro map plot dataset`,
-    `nyc metro madsnp plot dataset`, `nys map plot dataset`,
-    `nys madsnp plot dataset`) to include the new data in the enrollment
-    trend plots using the following template (fill in the bold
-    characters): “**yyyy**\_**mm**”
+Instructions for adding new months of data: 1. Download the zipped file
+folder for the new month from
+<https://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/MCRAdvPartDEnrolData/Monthly-Enrollment-by-Contract-Plan-State-County>
+2. Unzip the folder and save it in the data \> raw_data folder within
+the overarching folder holding this R project (cms_enrollment_data) 3.
+Add a new line of code to the top of the
+`apply enrollment data function` code block to apply the function to the
+new month of data using the following template (fill in the bold
+characters): enrollment_data(yyyy_mm = “**yyyy**\_**mm**”)  
+4. Add code for a new columns name to the end (before “)”) of the
+`col_name_vector_forward` object string within the
+`adjust column names for datasets` code block using the following
+template (fill in the bold characters): , “**yyyy**\_**mm**” 5. Update
+the year/month of the most recent month of data in each of the plot
+dataset code blocks (`nyc map plot dataset`, `nyc madsnp plot dataset`,
+`nyc metro map plot dataset`, `nyc metro madsnp plot dataset`,
+`nys map plot dataset`, `nys madsnp plot dataset`) to include the new
+data in the enrollment trend plots using the following template (fill in
+the bold characters): “**yyyy**\_**mm**”
 
 Note: This Rmd file can be searched for “note:” to locate the lines
 within the code that may require adjustment ot account for new monthly
